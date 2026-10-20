@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { getLang } from "@/lib/auth";
+import Link from "next/link";
 import { Header } from "@/components/header";
+import { LogoMark, Wordmark } from "@/components/logo";
+import { getLang } from "@/lib/auth";
 import { dict } from "@/lib/i18n";
 import "./globals.css";
 
@@ -13,12 +15,7 @@ export const metadata: Metadata = {
   description: "La plateforme d'entraide des développeurs africains, en français et en anglais. The help network for African developers.",
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#14110e" },
-  ],
-};
+export const viewport: Viewport = { themeColor: "#08090c" };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
@@ -27,9 +24,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang={lang} className={`${sans.variable} ${mono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <Header />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
-        <footer className="border-t border-border py-6 text-center text-sm text-muted">
-          {t.brand} — {t.tagline}
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">{children}</main>
+        <footer className="mt-16 border-t border-border">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-muted">
+            <div className="flex items-center gap-2.5">
+              <LogoMark size={22} />
+              <Wordmark />
+              <span className="hidden sm:inline">— {t.tagline}</span>
+            </div>
+            <nav className="flex items-center gap-5">
+              <Link href="/questions" className="hover:text-text">{t.nav.questions}</Link>
+              <Link href="/leaderboard" className="hover:text-text">{t.nav.leaderboard}</Link>
+              <span className="kbd">CADEV 2026</span>
+            </nav>
+          </div>
         </footer>
       </body>
     </html>

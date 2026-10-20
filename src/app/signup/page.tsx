@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth-shell";
 import { SignupForm } from "@/components/forms";
 import { getLang } from "@/lib/auth";
 import { COUNTRIES, dict, flag } from "@/lib/i18n";
@@ -13,14 +14,11 @@ export default async function SignupPage() {
     .sort((a, b) => a[1].localeCompare(b[1], lang))
     .map(([code, name]) => [code, `${flag(code)} ${name}`] as [string, string]);
   return (
-    <div className="mx-auto max-w-lg space-y-6 pt-6">
-      <h1 className="text-center text-3xl font-bold">{t.hero.cta}</h1>
-      <div className="card p-6">
-        <SignupForm t={t.auth} lang={lang} countries={countries} />
-      </div>
-      <p className="text-center text-sm text-muted">
-        {t.auth.haveAccount} <Link href="/login" className="font-semibold text-accent">{t.nav.login}</Link>
+    <AuthShell title={t.hero.cta} aside={{ headline: `${t.home.titleA} ${t.home.titleB}`, body: `${t.how.s2} ${t.how.s3}` }}>
+      <SignupForm t={t.auth} lang={lang} countries={countries} />
+      <p className="mt-6 text-sm text-muted">
+        {t.auth.haveAccount} <Link href="/login" className="font-medium text-text hover:underline">{t.nav.login}</Link>
       </p>
-    </div>
+    </AuthShell>
   );
 }

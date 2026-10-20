@@ -20,8 +20,8 @@ export function Translatable({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-        {!showOriginal && <span className="rounded-full bg-green-soft px-2 py-0.5 font-medium text-green">🌍 {labels.translated}</span>}
-        <button type="button" onClick={() => setShowOriginal((v) => !v)} className="underline hover:text-accent">
+        {!showOriginal && <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-soft px-2 py-0.5 text-accent-strong"><span className="h-1.5 w-1.5 rounded-full bg-accent-strong" />{labels.translated}</span>}
+        <button type="button" onClick={() => setShowOriginal((v) => !v)} className="text-muted underline-offset-2 hover:text-text hover:underline">
           {showOriginal ? labels.showTranslation : labels.showOriginal}
         </button>
       </div>

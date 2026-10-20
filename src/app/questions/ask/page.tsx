@@ -10,7 +10,8 @@ export default async function AskPage() {
   const t = dict(await getLang());
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-3xl font-bold">{t.nav.ask}</h1>
+      <p className="eyebrow">FR ⇄ EN</p>
+      <h1 className="text-4xl font-semibold tracking-tight">{t.nav.ask}</h1>
       <p className="text-muted">
         {user.lang === "fr"
           ? "Écris dans ta langue : ta question sera traduite automatiquement en anglais. Le code reste intact."

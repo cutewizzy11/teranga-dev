@@ -13,7 +13,7 @@ function Err({ state, name }: { state: FormState; name: string }) {
 
 function FormMessage({ state }: { state: FormState }) {
   if (!state?.message || state.message === "ok") return null;
-  return <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{state.message}</p>;
+  return <p role="alert" className="rounded-lg border border-orange/30 bg-orange-soft px-3 py-2 text-sm text-orange">{state.message}</p>;
 }
 
 function LangSelect({ name = "lang", defaultValue, label }: { name?: string; defaultValue: Lang; label: string }) {
@@ -65,7 +65,7 @@ export function AnswerForm({ t, lang, questionId }: { t: Labels; lang: Lang; que
   }, [state]);
   return (
     <form ref={ref} action={action} className="card space-y-3 p-5">
-      <h3 className="font-semibold">{t.yourAnswer}</h3>
+      <h3 className="text-xl font-bold">{t.yourAnswer}</h3>
       <FormMessage state={state} />
       <input type="hidden" name="questionId" value={questionId} />
       <textarea name="body" required minLength={10} rows={8} className="input font-mono text-sm" aria-label={t.yourAnswer} />

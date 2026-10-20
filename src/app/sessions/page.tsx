@@ -9,11 +9,11 @@ import { mySessions } from "@/server/queries";
 export const metadata: Metadata = { title: "Sessions" };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending: "bg-accent-soft text-accent-strong",
-  accepted: "bg-green-soft text-green",
-  completed: "bg-green text-white",
-  declined: "bg-surface-2 text-muted",
-  cancelled: "bg-surface-2 text-muted",
+  pending: "border border-orange/30 bg-orange-soft text-orange",
+  accepted: "border border-accent/40 bg-accent-soft text-accent-strong",
+  completed: "border border-green/40 bg-green-soft text-green",
+  declined: "border border-border text-muted",
+  cancelled: "border border-border text-muted",
 };
 
 export default async function SessionsPage() {
@@ -40,13 +40,13 @@ export default async function SessionsPage() {
         {rows.map((s) => {
           const other = role === "mentor" ? s.requester : s.mentor;
           return (
-            <li key={s.id} className="card space-y-2 p-4">
+            <li key={s.id} className="card space-y-2 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-semibold">{s.topic}</div>
+                <div className="text-lg font-bold">{s.topic}</div>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[s.status]}`}>{t.sessions.status[s.status]}</span>
               </div>
               <div className="text-sm text-muted">
-                {flag(other.country)} <Link href={`/u/${other.username}`} className="font-medium text-text hover:text-accent">{other.name}</Link>
+                {flag(other.country)} <Link href={`/u/${other.username}`} className="font-medium text-text hover:text-accent-strong">{other.name}</Link>
                 {" · "}<span className="font-mono">{s.credits}◆</span>{" · "}{timeAgo(s.createdAt, lang)}
               </div>
               {s.message && <p className="whitespace-pre-line text-sm">{s.message}</p>}
@@ -66,15 +66,15 @@ export default async function SessionsPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">{t.nav.sessions}</h1>
-        <span className="rounded-lg bg-green-soft px-3 py-1.5 font-mono text-green">{user.credits} ◆ {t.profile.credits}</span>
+        <h1 className="text-4xl font-semibold tracking-tight">{t.nav.sessions}</h1>
+        <span className="rounded-md border border-orange/30 bg-orange-soft px-3 py-1.5 font-mono text-sm text-orange">{user.credits} ◆ {t.profile.credits}</span>
       </div>
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">{t.sessions.incoming}</h2>
+        <h2 className="text-2xl font-semibold">{t.sessions.incoming}</h2>
         {list(incoming, "mentor")}
       </section>
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">{t.sessions.outgoing}</h2>
+        <h2 className="text-2xl font-semibold">{t.sessions.outgoing}</h2>
         {list(outgoing, "requester")}
       </section>
     </div>
