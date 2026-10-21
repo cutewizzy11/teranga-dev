@@ -130,6 +130,6 @@ None. The project was created entirely during the competition.
 
 | Member | Role |
 |---|---|
-| Paul Anyebe | <!-- role --> |
-| John Anyebe | <!-- role --> |
-| Sophia ([@Eloho1994](https://github.com/Eloho1994)) | <!-- role --> |
+| Paul Anyebe | Lead developer |
+| John Anyebe | Product & pitch |
+| Sophia ([@Eloho1994](https://github.com/Eloho1994)) | Product & pitch |
