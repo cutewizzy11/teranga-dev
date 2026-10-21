@@ -12,7 +12,7 @@ const mono = Geist_Mono({ variable: "--font-mono-family", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: "Teranga Dev", template: "%s · Teranga Dev" },
-  description: "La plateforme d'entraide des développeurs africains, en français et en anglais. The help network for African developers.",
+  description: "The help network for African developers, in English and French. La plateforme d'entraide des développeurs africains.",
 };
 
 export const viewport: Viewport = { themeColor: "#08090c" };

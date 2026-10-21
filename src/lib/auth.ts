@@ -36,12 +36,12 @@ export async function requireUser(): Promise<CurrentUser> {
 
 export const LANG_COOKIE = "td_lang";
 
-/** UI language: explicit choice (cookie) > account preference > browser Accept-Language > French. */
+/** UI language: explicit choice (cookie) > account preference > browser Accept-Language > English. */
 export const getLang = cache(async (): Promise<Lang> => {
   const chosen = (await cookies()).get(LANG_COOKIE)?.value;
   if (chosen === "fr" || chosen === "en") return chosen;
   const user = await getCurrentUser();
   if (user) return user.lang;
   const accept = (await headers()).get("accept-language") ?? "";
-  return /^en\b/i.test(accept.trim()) ? "en" : "fr";
+  return /^fr\b/i.test(accept.trim()) ? "fr" : "en";
 });

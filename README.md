@@ -1,86 +1,85 @@
 # Teranga Dev
 
-**La plateforme d'entraide des développeurs africains — en français et en anglais.**
-**The help network for African developers — in French and English.**
+**The help network for African developers — in English and French.**
 
-Projet CADEV 2026 (Coupe d'Afrique des Développeurs) — thème : *« Construire la plateforme d'échange africaine, pour les devs, par les devs. »*
+CADEV 2026 project (Africa Cup of Developers) — theme: *"Build the African exchange platform, for devs, by devs."*
 
-## Le problème
+## The problem
 
-L'Afrique compte des centaines de milliers de développeurs, mais l'entraide est coupée en deux par la langue : un dev de Dakar et un dev de Lagos résolvent les mêmes problèmes (paiement mobile, réseaux lents, appareils d'entrée de gamme) sans jamais se lire. Les plateformes mondiales sont en anglais et ignorent les réalités locales (M-Pesa, Wave, Orange Money, 2G/3G).
+Africa has hundreds of thousands of developers, but language splits them in two: a developer in Lagos and one in Dakar solve the same problems (mobile payments, slow networks, low-end phones) without ever reading each other's answers. Global platforms are English-only and ignore local realities such as Paystack, M-Pesa, Wave, Orange Money and 2G/3G networks.
 
-## La solution
+## The solution
 
-| Fonctionnalité | Ce que ça fait |
+| Feature | What it does |
 |---|---|
-| **Questions/réponses bilingues** | Chaque question et réponse est traduite automatiquement FR ⇄ EN. Le lecteur voit sa langue, avec « Voir l'original » en un clic. **Le code n'est jamais modifié** par la traduction. |
-| **Réputation** | Votes et réponses acceptées construisent une réputation publique — un portfolio vérifiable. |
-| **Échange de crédits** | Une réponse acceptée rapporte des crédits. Les crédits servent à réserver une session de mentorat / pair-programming avec un autre dev (crédits bloqués en séquestre, versés à la fin, remboursés en cas de refus). |
-| **Classement par pays** | Classement panafricain et par pays — on code aussi pour le drapeau. |
-| **Pensé pour l'Afrique** | Pages rendues côté serveur, très peu de JavaScript : fonctionne sur réseau lent et téléphone d'entrée de gamme. Les votes et formulaires marchent même sans JavaScript. |
+| **Bilingual Q&A** | Every question and answer is translated automatically between English and French. Readers see their own language, with "Show original" one click away. **Code is never altered** by translation. |
+| **Reputation** | Votes and accepted answers build a public reputation — a verifiable portfolio. |
+| **Credit exchange** | An accepted answer earns credits. Credits book a mentoring or pair-programming session with another developer (held in escrow, paid on completion, refunded if declined). |
+| **Country leaderboard** | Pan-African and per-country rankings — we code for the flag too. |
+| **Built for Africa** | Server-rendered pages with very little JavaScript: works on slow networks and low-end phones. Votes and forms work even without JavaScript. |
 
-## Démo
+## Demo
 
-- Compte démo : `demo@teranga.dev` / `Demo2026!`
-- Données de démonstration : 8 développeurs de 7 pays, questions réelles (React, M-Pesa, Flutter, NLP wolof/bambara, Laravel/Orange Money, Go).
+- Demo account: `demo@teranga.dev` / `Demo2026!`
+- Demo data: 12 developers from 7 countries (6 from Nigeria) and 11 real-world questions — Paystack webhooks, Paystack vs Flutterwave, offline-first sync through power cuts, +234 phone numbers, Hausa/Yoruba/Igbo speech recognition, M-Pesa, React, Flutter, Laravel, Go.
 
 ## Architecture
 
 ```
-Navigateur ──► Next.js 16 (App Router, Server Components, Server Actions)
-                 │
-                 ├─ src/lib/auth.ts        Data Access Layer : session → utilisateur courant
-                 ├─ src/lib/session.ts     Cookie de session JWT signé (HS256), httpOnly, SameSite=Lax
-                 ├─ src/server/services.ts Règles métier transactionnelles (votes, acceptation, séquestre)
-                 ├─ src/server/rules.ts    Économie réputation/crédits (un seul fichier, facile à expliquer)
-                 ├─ src/server/queries.ts  Lectures (liste, détail, profils, classements)
-                 └─ src/lib/translate.ts   Traduction FR⇄EN (API Claude, sortie JSON structurée)
-                 │
-                 ▼
-            PostgreSQL (Drizzle ORM) — PGlite embarqué en local, PostgreSQL managé Systalink en production
+Browser ──► Next.js 16 (App Router, Server Components, Server Actions)
+              │
+              ├─ src/lib/auth.ts        Data Access Layer: session → current user
+              ├─ src/lib/session.ts     Signed JWT session cookie (HS256), httpOnly, SameSite=Lax
+              ├─ src/server/services.ts Transactional business rules (votes, accepted answers, escrow)
+              ├─ src/server/rules.ts    Reputation and credit economy (one file, easy to explain)
+              ├─ src/server/queries.ts  Reads (lists, question page, profiles, leaderboards)
+              └─ src/lib/translate.ts   EN⇄FR translation (Claude API, structured JSON output)
+              │
+              ▼
+         PostgreSQL (Drizzle ORM) — embedded PGlite locally, Systalink managed PostgreSQL in production
 ```
 
-**Choix techniques à retenir (pour le jury)**
+**Key technical choices**
 
-- **Intégrité des crédits** : chaque mouvement passe par une transaction ; le débit est une mise à jour conditionnelle (`credits >= montant`), donc impossible de passer en négatif même avec des requêtes simultanées (testé). Un registre `credit_ledger` en ajout seul trace chaque mouvement. Une contrainte `CHECK (credits >= 0)` en base sert de dernier filet.
-- **Machine à états des sessions** : `pending → accepted → completed`, ou `declined/cancelled` avec remboursement. Chaque transition vérifie le rôle (mentor ou demandeur).
-- **Votes** : un vote par utilisateur et par contenu (clé primaire composite), modifiable/annulable ; le score et la réputation sont mis à jour dans la même transaction. Impossible de voter pour soi.
-- **Traduction asynchrone** : la traduction est lancée avec `after()` *après* l'envoi de la réponse HTTP — publier ne dépend jamais de l'API. Les traductions sont mises en cache en base (une ligne par contenu et par langue). Sans clé API, l'app fonctionne et affiche l'original.
-- **Sécurité** :
-  - Mots de passe bcrypt (coût 12), temps de réponse constant à la connexion (pas d'énumération des e-mails).
-  - Limitation de débit sur inscription, connexion, publication, votes.
-  - Validation de toutes les entrées avec Zod côté serveur.
-  - Markdown rendu sans HTML brut puis assaini (`rehype-sanitize`) : pas de XSS ; liens en `rel="nofollow noopener"`.
-  - Redirection après connexion limitée aux chemins internes (pas d'open redirect).
-  - En-têtes de sécurité (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`).
-  - Le contenu traduit est traité comme donnée, jamais comme instruction (prompt système dédié).
+- **Credit integrity:** every movement runs in a transaction; the debit is a conditional update (`credits >= amount`), so a balance can never go negative, even with simultaneous requests (tested). An append-only `credit_ledger` records every movement. A database `CHECK (credits >= 0)` is the last safety net.
+- **Session state machine:** `pending → accepted → completed`, or `declined/cancelled` with a refund. Every transition checks the user's role (mentor or requester).
+- **Votes:** one vote per user per post (composite primary key), changeable or removable; score and reputation are updated in the same transaction. You cannot vote on your own posts.
+- **Asynchronous translation:** translation runs with `after()`, *after* the HTTP response is sent — posting never depends on the API. Translations are cached in the database (one row per post per language). Without an API key the app still works and shows the original.
+- **Security:**
+  - bcrypt password hashing (cost 12) and constant-time login (no email enumeration).
+  - Rate limits on sign-up, login, posting and voting.
+  - Every input validated server-side with Zod.
+  - Markdown rendered without raw HTML, then sanitized (`rehype-sanitize`): no XSS; links use `rel="nofollow noopener noreferrer"`.
+  - Post-login redirects limited to internal paths (no open redirect).
+  - Security headers (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`).
+  - Translated content is treated as data, never as instructions (dedicated system prompt).
 
-## Lancer en local
+## Run locally
 
 ```bash
 npm install
-npm run setup     # migrations + données de démo (base PGlite embarquée dans ./.data)
+npm run setup     # migrations + demo data (embedded PGlite database in ./.data)
 npm run dev       # http://localhost:3000
 ```
 
-Aucune installation de PostgreSQL ni de Docker n'est nécessaire en local. Pour activer la traduction automatique, copier `.env.example` vers `.env.local` et renseigner `ANTHROPIC_API_KEY`.
+No PostgreSQL or Docker installation is needed locally. To enable automatic translation, copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY`.
 
 ```bash
-npm test          # tests des règles métier sur un vrai Postgres en mémoire
+npm test          # business-rule tests on a real in-memory Postgres
 npm run typecheck
 npm run lint
 ```
 
-## Déploiement (Systalink Datacloud)
+## Deployment (Systalink Datacloud)
 
-Produits utilisés : **Serveur cloud** (application, image Docker) + **Base de données PostgreSQL** managée.
+Products used: **Cloud server** (the app, as a Docker image) + managed **PostgreSQL database**.
 
 ```bash
-# 1. Migrations sur la base managée (depuis un poste avec accès réseau)
+# 1. Run migrations against the managed database (from a machine with network access)
 DATABASE_URL=postgres://... DATABASE_SSL=no-verify npm run db:migrate
-DATABASE_URL=postgres://... npm run db:seed   # optionnel : données de démo
+DATABASE_URL=postgres://... npm run db:seed   # optional: demo data
 
-# 2. Image Docker sur le serveur cloud
+# 2. Docker image on the cloud server
 docker build -t teranga-dev .
 docker run -d --restart unless-stopped -p 80:3000 \
   -e DATABASE_URL=... -e DATABASE_SSL=no-verify \
@@ -88,43 +87,49 @@ docker run -d --restart unless-stopped -p 80:3000 \
   teranga-dev
 ```
 
-`GET /api/health` vérifie l'application et la base (utilisé par le `HEALTHCHECK` Docker).
+`GET /api/health` checks the app and the database (used by the Docker `HEALTHCHECK`).
 
-## Déclarations (article 6 du règlement CADEV)
+## Declarations (CADEV rules, Article 6)
 
-### Composants tiers et licences
+### Third-party components and licences
 
-Toutes les dépendances livrées sont sous licence permissive. Principales dépendances directes :
+Every shipped dependency uses a permissive licence. Main direct dependencies:
 
-| Composant | Licence | Rôle |
+| Component | Licence | Role |
 |---|---|---|
-| next, react, react-dom | MIT | Framework web |
-| drizzle-orm | Apache-2.0 | ORM / requêtes SQL typées |
-| pg | MIT | Pilote PostgreSQL |
-| @electric-sql/pglite | Apache-2.0 / PostgreSQL | Postgres embarqué (dev et tests) |
+| next, react, react-dom | MIT | Web framework |
+| drizzle-orm | Apache-2.0 | ORM / typed SQL queries |
+| pg | MIT | PostgreSQL driver |
+| @electric-sql/pglite | Apache-2.0 / PostgreSQL | Embedded Postgres (development and tests) |
 | zod | MIT | Validation |
-| bcryptjs | MIT | Hachage des mots de passe |
-| jose | MIT | Signature des cookies de session (JWT) |
-| @anthropic-ai/sdk | MIT | Client de l'API de traduction |
-| react-markdown, remark-gfm, rehype-sanitize, rehype-highlight | MIT | Rendu Markdown sûr + coloration du code |
-| tailwindcss | MIT | Styles |
-| Outils de dev : typescript (Apache-2.0), vitest (MIT), drizzle-kit (MIT), tsx (MIT), eslint (MIT) | | Non livrés en production |
+| bcryptjs | MIT | Password hashing |
+| jose | MIT | Session cookie signing (JWT) |
+| @anthropic-ai/sdk | MIT | Translation API client |
+| react-markdown, remark-gfm, rehype-sanitize, rehype-highlight | MIT | Safe Markdown rendering + code highlighting |
+| tailwindcss | MIT | Styling |
+| Dev tools: typescript (Apache-2.0), vitest (MIT), drizzle-kit (MIT), tsx (MIT), eslint (MIT) | | Not shipped to production |
 
-Audit complet des 221 paquets de production : MIT, Apache-2.0, ISC, BSD, 0BSD, Unlicense, CC-BY-4.0 (données caniuse). **Aucun composant GPL/AGPL/LGPL n'est livré** : `sharp`/libvips (LGPL), dépendance *optionnelle* de Next.js, n'est pas utilisée (`images.unoptimized`) et est retirée de l'image Docker.
+Full audit of the 221 production packages: MIT, Apache-2.0, ISC, BSD, 0BSD, Unlicense, CC-BY-4.0 (caniuse data). **No GPL/AGPL/LGPL component is shipped:** `sharp`/libvips (LGPL), an *optional* Next.js dependency, is not used (`images.unoptimized`) and is removed from the Docker image.
 
-L'API Claude (Anthropic) est un service distant appelé via HTTP ; aucun code sous licence restrictive n'est intégré.
+The Claude API (Anthropic) is a remote service called over HTTPS; no restrictively licensed code is included.
 
-### Code préexistant
+### Pre-existing code
 
-Aucun. Le projet a été créé intégralement pendant la compétition.
+None. The project was created entirely during the competition.
 
-### Utilisation de l'intelligence artificielle
+### Use of artificial intelligence
 
-- **Outil** : Claude Code (Anthropic) comme assistant de programmation.
-- **Parties concernées** : génération initiale de la structure du projet, du schéma de base, des services métier, des pages et des tests, puis revue et itérations par l'équipe.
-- **Dans le produit** : l'API Claude traduit les contenus FR ⇄ EN (`src/lib/translate.ts`).
-- L'équipe maîtrise et peut expliquer l'ensemble du code (voir la section *Architecture*).
+- **Tool:** Claude Code (Anthropic) as a programming assistant.
+- **Parts concerned:** initial generation of the project structure, database schema, business services, pages and tests, followed by review and iteration by the team.
+- **In the product:** the Claude API translates content between English and French (`src/lib/translate.ts`).
+- The team understands and can explain all of the code (see *Architecture*).
 
-## Équipe
+## Team
 
-<!-- À compléter : nom, rôle et pays de chaque membre -->
+**Telnora** — "Commit and Pray" · representing 🇳🇬 Nigeria
+
+| Member | Role |
+|---|---|
+| Paul Anyebe | <!-- role --> |
+| John Anyebe | <!-- role --> |
+| Sophia ([@Eloho1994](https://github.com/Eloho1994)) | <!-- role --> |
