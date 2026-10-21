@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 
 const SAMPLES = [
   {
+    code: "crypto.createHmac('sha512', secret)\n  .update(rawBody)\n  .digest('hex')",
+    en: { who: "🇳🇬 tunde_dev", text: "How do I verify Paystack webhook signatures in Express?" },
+    fr: { who: "🇨🇲 nadia_cm", text: "Comment vérifier la signature des webhooks Paystack ?" },
+  },
+  {
     code: "useEffect(() => {\n  fetch('/api/paiements')\n}, [])",
     fr: { who: "🇸🇳 awa_dev", text: "Pourquoi mon useEffect s'exécute deux fois en développement ?" },
     en: { who: "🇳🇬 chidi_codes", text: "Why does my useEffect run twice in development?" },

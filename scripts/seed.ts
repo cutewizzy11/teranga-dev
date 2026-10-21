@@ -12,13 +12,17 @@ import { acceptAnswer, castVote, requestHelpSession, transitionHelpSession } fro
 const db = createDb();
 
 const PEOPLE = [
-  { username: "demo", name: "Démo Teranga", email: "demo@teranga.dev", country: "SN", lang: "fr", bio: "Compte de démonstration — explore librement !", skills: ["javascript", "react"] },
+  { username: "demo", name: "Demo Teranga", email: "demo@teranga.dev", country: "NG", lang: "en", bio: "Demo account — explore freely!", skills: ["javascript", "react"] },
   { username: "awa_dev", name: "Awa Ndiaye", email: "awa@example.com", country: "SN", lang: "fr", bio: "Développeuse full-stack à Dakar. Next.js, Postgres, Wave API.", skills: ["nextjs", "postgresql", "typescript"] },
   { username: "chidi_codes", name: "Chidi Okafor", email: "chidi@example.com", country: "NG", lang: "en", bio: "Backend engineer in Lagos. Go, Kafka, fintech.", skills: ["go", "kafka", "fintech"] },
   { username: "kwame_k", name: "Kwame Mensah", email: "kwame@example.com", country: "GH", lang: "en", bio: "Mobile dev (Flutter) building for low-end Android.", skills: ["flutter", "dart", "android"] },
   { username: "fatou_ml", name: "Fatoumata Traoré", email: "fatou@example.com", country: "ML", lang: "fr", bio: "Data scientist, NLP pour les langues africaines.", skills: ["python", "nlp", "pytorch"] },
   { username: "wanjiru", name: "Wanjiru Kamau", email: "wanjiru@example.com", country: "KE", lang: "en", bio: "DevOps @ Nairobi. M-Pesa integrations, Kubernetes.", skills: ["kubernetes", "m-pesa", "terraform"] },
   { username: "yao_dev", name: "Yao Kouassi", email: "yao@example.com", country: "CI", lang: "fr", bio: "Laravel & Vue.js, Abidjan. Mentor à mes heures.", skills: ["laravel", "php", "vue"] },
+  { username: "tunde_dev", name: "Tunde Adeyemi", email: "tunde@example.com", country: "NG", lang: "en", bio: "Backend engineer in Lagos. Payments, Node.js, Paystack & Flutterwave integrations.", skills: ["node", "paystack", "postgresql"] },
+  { username: "ngozi_ai", name: "Ngozi Eze", email: "ngozi@example.com", country: "NG", lang: "en", bio: "ML engineer in Enugu building speech models for Igbo, Yoruba and Hausa.", skills: ["python", "speech", "pytorch"] },
+  { username: "aisha_codes", name: "Aisha Bello", email: "aisha@example.com", country: "NG", lang: "en", bio: "Flutter & offline-first apps from Kano. GDG organizer.", skills: ["flutter", "offline-first", "firebase"] },
+  { username: "emeka_ops", name: "Emeka Okonkwo", email: "emeka@example.com", country: "NG", lang: "en", bio: "DevOps in Abuja. Making servers survive power cuts.", skills: ["linux", "docker", "aws"] },
   { username: "nadia_cm", name: "Nadia Mbarga", email: "nadia@example.com", country: "CM", lang: "fr", bio: "Ingénieure sécurité applicative à Douala.", skills: ["security", "owasp", "node"] },
 ] as const;
 
@@ -137,6 +141,100 @@ const QA: { author: string; tags: string[]; q: Post; answers: (Post & { author: 
         tBody: "Before raising it, check that you release connections properly: an unclosed `rows` keeps the connection. Always:\n\n```go\nrows, err := pool.Query(ctx, q)\nif err != nil { return err }\ndefer rows.Close()\n```\n\nThen the rule of thumb: `MaxConns ≈ (Postgres CPU cores × 2) + disks`. And add a `context.WithTimeout` to fail fast instead of piling up.",
       },
     ],
+  },
+  {
+    author: "tunde_dev",
+    tags: ["paystack", "node", "webhooks", "security"],
+    votes: 6,
+    q: {
+      lang: "en",
+      title: "How do I verify Paystack webhook signatures in Express?",
+      body: "My Express endpoint receives Paystack `charge.success` events, but anyone could POST fake events to it. Paystack sends an `x-paystack-signature` header — how do I verify it correctly?\n\n```js\napp.post('/webhooks/paystack', express.json(), (req, res) => {\n  // how do I check the signature here?\n})\n```",
+      tTitle: "Comment vérifier la signature des webhooks Paystack dans Express ?",
+      tBody: "Mon endpoint Express reçoit les événements Paystack `charge.success`, mais n'importe qui pourrait y envoyer de faux événements. Paystack envoie un en-tête `x-paystack-signature` — comment le vérifier correctement ?\n\n```js\napp.post('/webhooks/paystack', express.json(), (req, res) => {\n  // how do I check the signature here?\n})\n```",
+    },
+    answers: [
+      {
+        author: "nadia_cm", lang: "fr", accepted: true, votes: 5,
+        body: "La signature est un **HMAC SHA-512** du corps *brut* de la requête, calculé avec ta clé secrète. Deux pièges : il faut le corps brut (pas le JSON re-sérialisé), et la comparaison doit se faire en temps constant.\n\n```js\nimport crypto from 'node:crypto'\n\napp.post('/webhooks/paystack', express.raw({ type: 'application/json' }), (req, res) => {\n  const expected = crypto\n    .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)\n    .update(req.body)\n    .digest('hex')\n  const received = req.get('x-paystack-signature') ?? ''\n  const ok = received.length === expected.length &&\n    crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected))\n  if (!ok) return res.sendStatus(401)\n\n  const event = JSON.parse(req.body)\n  // process idempotently, keyed by event.data.reference\n  res.sendStatus(200)\n})\n```\n\nVérifie aussi toujours la transaction côté serveur avec `GET /transaction/verify/:reference` avant de livrer la commande.",
+        tBody: "The signature is an **HMAC SHA-512** of the *raw* request body, computed with your secret key. Two traps: you need the raw body (not re-serialized JSON), and the comparison must be constant-time.\n\n```js\nimport crypto from 'node:crypto'\n\napp.post('/webhooks/paystack', express.raw({ type: 'application/json' }), (req, res) => {\n  const expected = crypto\n    .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)\n    .update(req.body)\n    .digest('hex')\n  const received = req.get('x-paystack-signature') ?? ''\n  const ok = received.length === expected.length &&\n    crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected))\n  if (!ok) return res.sendStatus(401)\n\n  const event = JSON.parse(req.body)\n  // process idempotently, keyed by event.data.reference\n  res.sendStatus(200)\n})\n```\n\nAlso always verify the transaction server-side with `GET /transaction/verify/:reference` before delivering the order.",
+      },
+    ],
+  },
+  {
+    author: "chidi_codes",
+    tags: ["payments", "flutterwave", "paystack"],
+    votes: 4,
+    q: {
+      lang: "en",
+      title: "Paystack or Flutterwave for an app selling in Nigeria and Côte d'Ivoire?",
+      body: "We're launching in Lagos first, then Abidjan. Which payment provider handles both markets best — cards, bank transfer and mobile money?",
+      tTitle: "Paystack ou Flutterwave pour une app qui vend au Nigeria et en Côte d'Ivoire ?",
+      tBody: "Nous lançons d'abord à Lagos, puis à Abidjan. Quel prestataire de paiement gère le mieux les deux marchés — cartes, virement bancaire et mobile money ?",
+    },
+    answers: [
+      {
+        author: "yao_dev", lang: "fr", accepted: true, votes: 4,
+        body: "À Abidjan, l'essentiel des paiements passe par le **mobile money** (Orange Money, MTN MoMo, Wave), pas par la carte. D'expérience :\n\n- **Flutterwave** couvre le Nigeria *et* le mobile money ivoirien avec une seule intégration.\n- **Paystack** est excellent au Nigeria (virement, USSD, cartes), mais vérifie la couverture XOF avant de t'engager.\n- Beaucoup d'équipes gardent Paystack au Nigeria et ajoutent **CinetPay** pour l'Afrique francophone.\n\nConseil : cache le prestataire derrière une interface `PaymentProvider` dès le départ — en changer plus tard coûtera beaucoup moins cher.",
+        tBody: "In Abidjan, most payments go through **mobile money** (Orange Money, MTN MoMo, Wave), not cards. From experience:\n\n- **Flutterwave** covers Nigeria *and* Ivorian mobile money with a single integration.\n- **Paystack** is excellent in Nigeria (transfer, USSD, cards), but check XOF coverage before committing.\n- Many teams keep Paystack in Nigeria and add **CinetPay** for French-speaking Africa.\n\nTip: hide the provider behind a `PaymentProvider` interface from day one — switching later will cost far less.",
+      },
+      {
+        author: "tunde_dev", lang: "en", votes: 2,
+        body: "+1 to the abstraction. Also plan for **bank transfer** in Nigeria: a big share of our checkout volume is pay-with-transfer through dedicated virtual accounts.",
+        tBody: "+1 pour l'abstraction. Prévois aussi le **virement bancaire** au Nigeria : une grande partie de nos paiements passe par le virement vers des comptes virtuels dédiés.",
+      },
+    ],
+  },
+  {
+    author: "aisha_codes",
+    tags: ["offline-first", "flutter", "sync"],
+    votes: 5,
+    q: {
+      lang: "en",
+      title: "Offline-first sync strategy for unstable power and network?",
+      body: "Our field-agent app in Kano must keep working through hours of power cuts and dead network, then sync when back online. How do you avoid duplicate or lost records when syncing?",
+      tTitle: "Stratégie de synchronisation hors ligne pour une électricité et un réseau instables ?",
+      tBody: "Notre application pour agents de terrain à Kano doit continuer à fonctionner pendant des heures de coupures de courant et de réseau, puis se synchroniser au retour en ligne. Comment éviter les doublons ou les pertes d'enregistrements pendant la synchronisation ?",
+    },
+    answers: [
+      {
+        author: "awa_dev", lang: "fr", accepted: true, votes: 3,
+        body: "Le pattern qui marche chez nous :\n\n1. **ID généré côté client** (UUID v7) pour chaque enregistrement — le serveur fait un `INSERT ... ON CONFLICT`, donc renvoyer deux fois ne crée jamais de doublon.\n2. Une **file d'envoi locale** (SQLite/Drift) : on n'efface une entrée qu'après l'accusé de réception du serveur.\n3. Envoi **par petits lots** (ex. 50) avec reprise exponentielle — une connexion 2G qui coupe ne perd qu'un lot.\n4. Pour les conflits de modification : `updated_at` et la règle « la dernière écriture gagne ».\n\n```sql\nINSERT INTO visits (id, agent_id, data, updated_at)\nVALUES ($1, $2, $3, $4)\nON CONFLICT (id) DO UPDATE\n  SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at\n  WHERE visits.updated_at < EXCLUDED.updated_at;\n```",
+        tBody: "The pattern that works for us:\n\n1. **Client-generated ID** (UUID v7) for every record — the server does `INSERT ... ON CONFLICT`, so sending twice never creates a duplicate.\n2. A **local outbox** (SQLite/Drift): an entry is only deleted after the server acknowledges it.\n3. Send in **small batches** (e.g. 50) with exponential retry — a dropping 2G connection only loses one batch.\n4. For edit conflicts: `updated_at` and a \"last write wins\" rule.\n\n```sql\nINSERT INTO visits (id, agent_id, data, updated_at)\nVALUES ($1, $2, $3, $4)\nON CONFLICT (id) DO UPDATE\n  SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at\n  WHERE visits.updated_at < EXCLUDED.updated_at;\n```",
+      },
+    ],
+  },
+  {
+    author: "emeka_ops",
+    tags: ["typescript", "validation"],
+    votes: 3,
+    q: {
+      lang: "en",
+      title: "Normalizing Nigerian phone numbers (+234) in TypeScript",
+      body: "Users type `08031234567`, `+2348031234567`, `2348031234567` or `0803 123 4567`. What's a robust way to normalize these to E.164 before sending OTPs?",
+      tTitle: "Normaliser les numéros de téléphone nigérians (+234) en TypeScript",
+      tBody: "Les utilisateurs saisissent `08031234567`, `+2348031234567`, `2348031234567` ou `0803 123 4567`. Quelle est une méthode robuste pour les normaliser au format E.164 avant d'envoyer des OTP ?",
+    },
+    answers: [
+      {
+        author: "fatou_ml", lang: "fr", votes: 2,
+        body: "Retire tout sauf les chiffres, puis gère les trois formes possibles. Les numéros mobiles nigérians ont 10 chiffres après l'indicatif :\n\n```ts\nexport function toE164NG(input: string): string | null {\n  const d = input.replace(/\\D/g, '')\n  const local =\n    d.startsWith('234') ? d.slice(3) :\n    d.startsWith('0') ? d.slice(1) : d\n  return /^[789][01]\\d{8}$/.test(local) ? `+234${local}` : null\n}\n```\n\nPour un produit multi-pays, utilise plutôt `libphonenumber-js` (licence MIT).",
+        tBody: "Strip everything except digits, then handle the three possible forms. Nigerian mobile numbers have 10 digits after the country code:\n\n```ts\nexport function toE164NG(input: string): string | null {\n  const d = input.replace(/\\D/g, '')\n  const local =\n    d.startsWith('234') ? d.slice(3) :\n    d.startsWith('0') ? d.slice(1) : d\n  return /^[789][01]\\d{8}$/.test(local) ? `+234${local}` : null\n}\n```\n\nFor a multi-country product, use `libphonenumber-js` instead (MIT licence).",
+      },
+    ],
+  },
+  {
+    author: "ngozi_ai",
+    tags: ["python", "speech", "nlp"],
+    votes: 4,
+    q: {
+      lang: "en",
+      title: "Speech-to-text for Hausa, Yoruba and Igbo with little data?",
+      body: "I have about 40 hours of transcribed audio across Hausa, Yoruba and Igbo. Is it better to fine-tune one multilingual model or three separate ones? Tonal diacritics in Yoruba are a big problem.",
+      tTitle: "Reconnaissance vocale pour le haoussa, le yoruba et l'igbo avec peu de données ?",
+      tBody: "J'ai environ 40 heures d'audio transcrit en haoussa, yoruba et igbo. Vaut-il mieux fine-tuner un seul modèle multilingue ou trois modèles séparés ? Les diacritiques tonals du yoruba posent un gros problème.",
+    },
+    answers: [],
   },
 ];
 
